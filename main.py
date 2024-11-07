@@ -1,9 +1,16 @@
 import argparse
+import os
 from datetime import datetime, timedelta
+
+from dotenv import load_dotenv
+
+from facebook import Facebook
 from google_auth import GoogleAuth
-from youtube import Youtube
-from templates import Templates
 from medias import Medias
+from templates import Templates
+from youtube import Youtube
+
+load_dotenv()
 
 parser = argparse.ArgumentParser(
     description="Uploader une vidéo sur YouTube avec planification"
@@ -34,6 +41,7 @@ class App:
         self.youtube = Youtube()
         self.templates = Templates()
         self.medias = Medias()
+        self.facebook = Facebook()
 
     def upload_video_to_youtube(
         self,
@@ -88,7 +96,20 @@ class App:
         )
 
     def main(self, arguments):
-        video_id = self.upload(arguments)
+        video_url = self.upload(arguments)
+        message = self.templates.generate_facebook_description(
+            arguments.title,
+            arguments.artist,
+            arguments.album,
+            arguments.genre,
+            arguments.description_text,
+        )
+        self.facebook.post_video_link(
+            video_url,
+            message,
+            os.environ.get("PAGE_ACCESS_TOKEN"),
+            os.environ.get("PAGE_ID"),
+        )
 
 
 if __name__ == "__main__":
